@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Luna Cycle Tracker</title>
+  <style>
+:root {
+  color-scheme: light;
+  --page: #f8e9ee;
+  --phone: #fffafb;
+  --card: rgba(255, 255, 255, 0.88);
+  --text: #2a2030;
+  --muted: #887684;
+  --soft: #fff1f5;
+  --soft-2: #f7edf5;
+  --rose: #f66f8f;
+  --rose-dark: #c44767;
+  --peach: #ffd9c8;
+  --lavender: #efe7ff;
+  --blue-soft: #eaf8ff;
+  --border: rgba(72, 42, 62, 0.08);
+  --danger: #b43f52;
+  --shadow: 0 18px 42px rgba(113, 63, 85, 0.13);
+  --soft-shadow: 0 8px 22px rgba(113, 63, 85, 0.09);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, #ffe3ed 0, transparent 34%),
+    linear-gradient(180deg, #fff4f7 0%, #f7e6ed 100%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.app-shell {
+  width: min(430px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 10px 14px 104px;
+  background: linear-gradient(180deg, #fffafb 0%, #fff6f9 100%);
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -10px -14px 12px;
+  padding: 13px 18px 9px;
+  background: rgba(255, 250, 251, 0.84);
+  backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.tiny-label, .eyebrow, .section-kicker {
+  margin: 0 0 3px;
+  color: var(--rose-dark);
+  font-size: 0.67rem;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+.app-topbar strong {
+  display: block;
+  font-size: 1.03rem;
+  line-height: 1.08;
+  font-weight: 680;
+  letter-spacing: -0.028em;
+}
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  font-size: 0.95rem;
+}
+
+.card, .status-card {
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+.card { padding: 17px; }
+.card:target, .status-card:target {
+  outline: 3px solid rgba(246, 111, 143, 0.17);
+  outline-offset: 4px;
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  margin-bottom: 10px;
+  background:
+    radial-gradient(circle at right top, rgba(255, 217, 200, 0.9), transparent 42%),
+    linear-gradient(135deg, #ffffff, #ffeef4);
+}
+.status-card h1 {
+  margin: 0 0 5px;
+  font-size: 1.72rem;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.042em;
+}
+.status-card p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+h1, h2, p { margin-top: 0; }
+h2 {
+  margin: 0 0 10px;
+  font-size: 1.24rem;
+  line-height: 1.12;
+  font-weight: 680;
+  letter-spacing: -0.032em;
+}
+.section-note, .apple-card p, .help-text {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.42;
+}
+
+button, .import-button, .link-button, .mini-cta {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 0.91rem;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.primary {
+  background: linear-gradient(135deg, #ff7d99, #ed5f82);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(237, 95, 130, 0.26);
+}
+.ghost { background: #fff; color: var(--rose-dark); border: 1px solid var(--border); }
+.danger { background: #fff1f3; color: var(--danger); }
+.hidden { display: none !important; }
+.soft-badge {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fff4f8;
+  color: var(--rose-dark);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.stat {
+  min-height: 86px;
+  padding: 15px;
+  box-shadow: var(--soft-shadow);
+}
+.stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.24;
+  margin-bottom: 8px;
+}
+.stat strong {
+  display: block;
+  font-size: 0.98rem;
+  line-height: 1.18;
+  font-weight: 660;
+  letter-spacing: -0.025em;
+}
+
+.layout { display: grid; gap: 10px; margin-bottom: 10px; }
+.form-card, .calendar-card, .cycles-card, .apple-card, .status-card {
+  scroll-margin-top: 76px;
+  scroll-margin-bottom: 104px;
+}
+.simple-header { margin-bottom: 12px; }
+
+.log-panel { display: grid; gap: 10px; }
+.date-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.input-tile {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid rgba(246, 111, 143, 0.13);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff, #fff7fa);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: -0.004em;
+  box-shadow: 0 5px 14px rgba(113, 63, 85, 0.055);
+}
+.input-tile.full { grid-template-columns: 1fr; }
+.input-tile span { display: block; }
+.input-tile input, .input-tile select, .input-tile textarea {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 610;
+  letter-spacing: -0.018em;
+}
+.input-tile textarea {
+  min-height: 40px;
+  resize: vertical;
+  font-weight: 500;
+  color: #594a57;
+}
+.notes-tile { padding-bottom: 10px; }
+.symptom-block {
+  border: 1px solid rgba(246, 111, 143, 0.12);
+  border-radius: 22px;
+  padding: 14px;
+  margin: 0;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(113, 63, 85, 0.045);
+}
+.symptom-block legend {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(246, 111, 143, 0.12);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #fff6f9;
+  color: #5d4c5a;
+  font-size: 0.82rem;
+  font-weight: 540;
+}
+.chip input { width: auto; margin: 0; accent-color: var(--rose); }
+.button-row { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+.save-row { margin-top: 2px; }
+.save-row .primary { width: 100%; padding: 14px 16px; }
+.save-status {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  font-size: 0.84rem;
+  line-height: 1.34;
+  font-weight: 560;
+}
+.save-status.success { background: #eefaf2; color: #287144; }
+.save-status.warning { background: #fff5dc; color: #815717; }
+.compact { justify-content: flex-start; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.calendar-head { align-items: center; }
+.month-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.month-controls button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: #fff;
+  color: var(--text);
+  box-shadow: var(--soft-shadow);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.calendar-legend {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+.dot.period { background: var(--rose); }
+.dot.predicted { background: #a590e8; }
+.weekdays, .calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.weekdays {
+  color: #aa9ba7;
+  font-size: 0.64rem;
+  text-align: center;
+  font-weight: 650;
+  margin-bottom: 7px;
+}
+.day {
+  aspect-ratio: 1 / 1;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(72, 42, 62, 0.055);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #554754;
+  font-size: 0.82rem;
+  font-weight: 570;
+}
+.day.empty { visibility: hidden; }
+.day.today { background: #fff; border-color: var(--rose); color: var(--rose-dark); box-shadow: inset 0 0 0 1px rgba(246, 111, 143, 0.18); }
+.day.period { background: linear-gradient(135deg, #ff8ba3, #ef6385); color: #fff; border-color: transparent; box-shadow: 0 7px 14px rgba(237, 95, 130, 0.24); }
+.day.predicted { background: var(--lavender); color: #6651a5; border-style: dashed; }
+.day.period.predicted { background: linear-gradient(135deg, var(--rose), #a590e8); color: #fff; }
+.calendar-hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.history { display: grid; gap: 9px; }
+.history.empty { color: var(--muted); font-size: 0.9rem; }
+.history-item {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(246, 111, 143, 0.11);
+  border-radius: 22px;
+  background: #fff;
+}
+.history-item p { color: var(--muted); margin: 8px 0 0; font-size: 0.86rem; line-height: 1.38; }
+.cycle-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.period-range { font-size: 0.98rem; letter-spacing: -0.022em; }
+.cycle-chip {
+  border-radius: 999px;
+  background: #fff0f5;
+  color: var(--rose-dark);
+  font-size: 0.69rem;
+  font-weight: 650;
+  padding: 4px 8px;
+}
+.cycle-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.cycle-meta span {
+  background: #fff6f9;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 560;
+  padding: 6px 8px;
+}
+.item-actions, .tools-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; }
+.tools-row { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.small-action { padding: 8px 11px; font-size: 0.81rem; }
+.import-button { display: inline-flex; position: relative; overflow: hidden; }
+.import-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.apple-card { margin-top: 10px; }
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: min(402px, calc(100% - 22px));
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 40px rgba(113, 63, 85, 0.18);
+  backdrop-filter: blur(20px) saturate(160%);
+  z-index: 30;
+}
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 48px;
+  border-radius: 21px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.bottom-nav a span { font-size: 1rem; line-height: 1; }
+.bottom-nav .nav-primary { background: linear-gradient(135deg, #ff7d99, #ed5f82); color: #fff; }
+
+@media (min-width: 700px) {
+  body { padding: 18px 0; }
+  .app-shell { min-height: calc(100vh - 36px); border-radius: 40px; overflow: hidden; }
+}
+
+@media (max-width: 380px) {
+  .app-shell { padding-left: 10px; padding-right: 10px; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .section-header { flex-direction: column; }
+  .date-pair { grid-template-columns: 1fr; }
+}
+
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-topbar">
+      <div>
+        <p class="tiny-label">Luna</p>
+        <strong>Cycle Tracker</strong>
+      </div>
+      <button class="icon-button" type="button" aria-label="Privacy">🔒</button>
+    </header>
+    <section class="status-card" id="overview" aria-live="polite">
+      <div>
+        <p class="eyebrow">Today</p>
+        <h1 id="daysUntil">Welcome</h1>
+        <p id="todayMessage">Add your latest period to start seeing helpful cycle estimates.</p>
+      </div>
+      <a class="primary mini-cta" href="#logPeriod">+ Log</a>
+    </section>
+
+    <section class="summary-grid" aria-live="polite">
+      <article class="card stat">
+        <span>Estimated next period</span>
+        <strong id="nextPeriod">Add a period to begin</strong>
+      </article>
+      <article class="card stat">
+        <span>Average cycle</span>
+        <strong id="averageCycle">—</strong>
+      </article>
+      <article class="card stat">
+        <span>Previous cycles</span>
+        <strong id="periodCount">0</strong>
+      </article>
+      <article class="card stat">
+        <span>Average period length</span>
+        <strong id="averagePeriod">—</strong>
+      </article>
+    </section>
+
+    <section class="layout">
+      <section class="card form-card" id="logPeriod">
+        <div class="section-header simple-header">
+          <div>
+            <p class="section-kicker">Entry</p>
+            <h2>Add period</h2>
+          </div>
+          <span class="soft-badge">Private</span>
+        </div>
+        <div id="periodForm" class="log-panel">
+          <input type="hidden" id="editId" />
+          <div class="date-pair">
+            <label class="input-tile">
+              <span>Start date</span>
+              <input id="startDate" type="date" required />
+            </label>
+            <label class="input-tile">
+              <span>End date</span>
+              <input id="endDate" type="date" required />
+            </label>
+          </div>
+          <label class="input-tile full">
+            <span>Flow</span>
+            <select id="flow">
+              <option>Light</option>
+              <option selected>Medium</option>
+              <option>Heavy</option>
+            </select>
+          </label>
+          <fieldset class="symptom-block">
+            <legend>Symptoms</legend>
+            <div class="chips" id="symptomChoices">
+              <label class="chip"><input type="checkbox" value="Cramps" /> Cramps</label>
+              <label class="chip"><input type="checkbox" value="Headache" /> Headache</label>
+              <label class="chip"><input type="checkbox" value="Bloating" /> Bloating</label>
+              <label class="chip"><input type="checkbox" value="Back pain" /> Back pain</label>
+              <label class="chip"><input type="checkbox" value="Acne" /> Acne</label>
+              <label class="chip"><input type="checkbox" value="Tired" /> Tired</label>
+              <label class="chip"><input type="checkbox" value="Mood changes" /> Mood changes</label>
+              <label class="chip"><input type="checkbox" value="Tender breasts" /> Tender breasts</label>
+              <label class="chip"><input type="checkbox" value="Nausea" /> Nausea</label>
+            </div>
+          </fieldset>
+          <div class="button-row save-row">
+            <button type="button" id="savePeriod" class="primary">Save period</button>
+            <button type="button" id="cancelEdit" class="ghost hidden">Cancel</button>
+          </div>
+          <p id="saveStatus" class="save-status hidden" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="card calendar-card" id="calendarSection">
+        <div class="section-header calendar-head">
+          <div>
+            <p class="section-kicker">Calendar</p>
+            <h2 id="monthLabel">This month</h2>
+          </div>
+          <div class="month-controls">
+            <button id="prevMonth" aria-label="Previous month">‹</button>
+            <button id="nextMonth" aria-label="Next month">›</button>
+          </div>
+        </div>
+        <div class="calendar-legend">
+          <span><i class="dot period"></i> Period</span>
+          <span><i class="dot predicted"></i> Estimated</span>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div id="calendar" class="calendar" aria-label="Cycle calendar"></div>
+        <p class="calendar-hint">Saved dates show here right away.</p>
+      </section>
+    </section>
+
+    <section class="card cycles-card" id="previousCycles">
+      <div class="section-header">
+        <div>
+          <p class="section-kicker">Saved records</p>
+          <h2>Previous cycles</h2>
+          <p class="section-note">Your most recent cycle appears first. Each card shows period length and cycle gap when available.</p>
+        </div>
+      </div>
+      <div id="history" class="history empty">No previous cycles logged yet.</div>
+      <div class="tools-row">
+        <button id="exportData" class="ghost small-action">Export</button>
+        <label class="import-button ghost small-action">
+          Import
+          <input id="importData" type="file" accept="application/json" />
+        </label>
+        <button id="clearData" class="danger small-action">Delete all</button>
+      </div>
+    </section>
+
+    <section class="card apple-card" id="importSection">
+      <p class="section-kicker">Coming next</p>
+      <h2>Apple Health history</h2>
+      <p>For this first version, you can use manual logging and backup import/export. Apple Health import will be the next bigger step because Apple exports a large file that needs special reading.</p>
+      <button id="appleHelp" class="ghost">How Apple Health import will work</button>
+      <p id="appleHelpText" class="help-text hidden">You would export your Health data from your iPhone, then choose that file in this app. The app would read only cycle-related entries in your browser and let you review them before saving.</p>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main app navigation">
+    <a href="#overview"><span>♡</span>Today</a>
+    <a href="#calendarSection"><span>◯</span>Calendar</a>
+    <a href="#logPeriod" class="nav-primary"><span>＋</span>Log</a>
+    <a href="#previousCycles"><span>≋</span>Cycles</a>
+    <a href="#importSection"><span>⇪</span>Import</a>
+  </nav>
+
+  <template id="historyItemTemplate">
+    <article class="history-item">
+      <div>
+        <div class="cycle-title-row">
+          <strong class="period-range"></strong>
+          <span class="cycle-chip"></span>
+        </div>
+        <div class="cycle-meta"></div>
+        <p class="period-details"></p>
+      </div>
+      <div class="item-actions">
+        <button class="edit ghost">Edit</button>
+        <button class="delete danger">Delete</button>
+      </div>
+    </article>
+  </template>
+
+  <script>
+var STORAGE_KEY = "luna-cycle-tracker-v1";
+var periods = loadPeriods();
+var storageWarning = "";
+var visibleMonth = new Date();
+visibleMonth.setDate(1);
+
+var form = document.getElementById("periodForm");
+var editId = document.getElementById("editId");
+var startDate = document.getElementById("startDate");
+var endDate = document.getElementById("endDate");
+var flow = document.getElementById("flow");
+var symptomChoices = document.getElementById("symptomChoices");
+var historyEl = document.getElementById("history");
+var template = document.getElementById("historyItemTemplate");
+var calendarEl = document.getElementById("calendar");
+var monthLabel = document.getElementById("monthLabel");
+var nextPeriod = document.getElementById("nextPeriod");
+var averageCycle = document.getElementById("averageCycle");
+var periodCount = document.getElementById("periodCount");
+var averagePeriod = document.getElementById("averagePeriod");
+var daysUntil = document.getElementById("daysUntil");
+var todayMessage = document.getElementById("todayMessage");
+var cancelEdit = document.getElementById("cancelEdit");
+var saveStatus = document.getElementById("saveStatus");
+
+function loadPeriods() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function savePeriods() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(periods));
+    storageWarning = "";
+    return true;
+  } catch (error) {
+    storageWarning = "Saved on screen, but this viewer may not keep it after closing. Open in Safari or Chrome for permanent saving.";
+    return false;
+  }
+}
+
+function toDate(value) {
+  return new Date(value + "T12:00:00");
+}
+
+function toISO(date) {
+  var year = date.getFullYear();
+  var month = String(date.getMonth() + 1);
+  var day = String(date.getDate());
+  if (month.length < 2) month = "0" + month;
+  if (day.length < 2) day = "0" + day;
+  return year + "-" + month + "-" + day;
+}
+
+function formatDate(value) {
+  return toDate(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function daysBetween(a, b) {
+  var oneDay = 24 * 60 * 60 * 1000;
+  return Math.round((toDate(b) - toDate(a)) / oneDay);
+}
+
+function addDays(value, days) {
+  var date = toDate(value);
+  date.setDate(date.getDate() + days);
+  return toISO(date);
+}
+
+function sortedPeriods() {
+  return periods.slice().sort(function (a, b) {
+    return toDate(b.start) - toDate(a.start);
+  });
+}
+
+function chronologicalPeriods() {
+  return periods.slice().sort(function (a, b) {
+    return toDate(a.start) - toDate(b.start);
+  });
+}
+
+function averageCycleDays() {
+  var ordered = chronologicalPeriods();
+  if (ordered.length < 2) return 28;
+  var gaps = [];
+  for (var i = 1; i < ordered.length; i += 1) {
+    var gap = daysBetween(ordered[i - 1].start, ordered[i].start);
+    if (gap >= 15 && gap <= 60) gaps.push(gap);
+  }
+  if (!gaps.length) return 28;
+  var sum = 0;
+  for (var j = 0; j < gaps.length; j += 1) sum += gaps[j];
+  return Math.round(sum / gaps.length);
+}
+
+function periodLength(period) {
+  return Math.max(1, daysBetween(period.start, period.end) + 1);
+}
+
+function averagePeriodLength() {
+  if (!periods.length) return null;
+  var lengths = [];
+  for (var i = 0; i < periods.length; i += 1) {
+    var length = periodLength(periods[i]);
+    if (length >= 1 && length <= 14) lengths.push(length);
+  }
+  if (!lengths.length) return null;
+  var sum = 0;
+  for (var j = 0; j < lengths.length; j += 1) sum += lengths[j];
+  return Math.round(sum / lengths.length);
+}
+
+function cycleGapFor(period) {
+  var ordered = chronologicalPeriods();
+  var index = -1;
+  for (var i = 0; i < ordered.length; i += 1) {
+    if (ordered[i].id === period.id) index = i;
+  }
+  if (index <= 0) return null;
+  var gap = daysBetween(ordered[index - 1].start, period.start);
+  return gap >= 1 ? gap : null;
+}
+
+function predictedPeriodRange() {
+  if (!periods.length) return null;
+  var latest = sortedPeriods()[0];
+  var length = averageCycleDays();
+  var start = addDays(latest.start, length);
+  var pLength = Math.max(1, daysBetween(latest.start, latest.end) + 1 || 5);
+  var end = addDays(start, Math.min(pLength, 8) - 1);
+  return { start: start, end: end };
+}
+
+function dateInRange(dateISO, startISO, endISO) {
+  return dateISO >= startISO && dateISO <= endISO;
+}
+
+function makeId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "period-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+}
+
+function getSelectedSymptoms() {
+  var selected = [];
+  var inputs = symptomChoices.querySelectorAll("input[type='checkbox']");
+  for (var i = 0; i < inputs.length; i += 1) {
+    if (inputs[i].checked) selected.push(inputs[i].value);
+  }
+  return selected;
+}
+
+function setSelectedSymptoms(selected) {
+  var inputs = symptomChoices.querySelectorAll("input[type='checkbox']");
+  for (var i = 0; i < inputs.length; i += 1) {
+    inputs[i].checked = selected.indexOf(inputs[i].value) !== -1;
+  }
+}
+
+function resetForm() {
+  startDate.value = "";
+  endDate.value = "";
+  editId.value = "";
+  flow.value = "Medium";
+  setSelectedSymptoms([]);
+  cancelEdit.classList.add("hidden");
+  form.querySelector(".primary").textContent = "Save period";
+}
+
+function showSaveStatus(message, type) {
+  if (!saveStatus) return;
+  saveStatus.textContent = message;
+  saveStatus.className = "save-status " + (type || "success");
+  window.clearTimeout(showSaveStatus.timer);
+  showSaveStatus.timer = window.setTimeout(function () {
+    saveStatus.textContent = "";
+    saveStatus.className = "save-status hidden";
+  }, 5200);
+}
+
+function renderSummary() {
+  periodCount.textContent = String(periods.length);
+  averageCycle.textContent = periods.length < 2 ? "Need 2 periods" : averageCycleDays() + " days";
+  var avgPeriod = averagePeriodLength();
+  averagePeriod.textContent = avgPeriod ? avgPeriod + " days" : "—";
+  var predicted = predictedPeriodRange();
+  nextPeriod.textContent = predicted ? formatDate(predicted.start) + " – " + formatDate(predicted.end) : "Add a period to begin";
+
+  if (!predicted) {
+    daysUntil.textContent = "Welcome";
+    todayMessage.textContent = "Add your latest period to start seeing helpful cycle estimates.";
+    return;
+  }
+
+  var today = toISO(new Date());
+  var days = daysBetween(today, predicted.start);
+  if (days > 1) {
+    daysUntil.textContent = days + " days";
+    todayMessage.textContent = "Your next period is estimated to start around " + formatDate(predicted.start) + ".";
+  } else if (days === 1) {
+    daysUntil.textContent = "Tomorrow";
+    todayMessage.textContent = "Your next period is estimated to start tomorrow.";
+  } else if (days === 0) {
+    daysUntil.textContent = "Today";
+    todayMessage.textContent = "Your next period is estimated to start today.";
+  } else {
+    daysUntil.textContent = "Update?";
+    todayMessage.textContent = "Your estimate has passed. Log your latest period to refresh the prediction.";
+  }
+}
+
+function renderHistory() {
+  historyEl.innerHTML = "";
+  if (!periods.length) {
+    historyEl.className = "history empty";
+    historyEl.textContent = "No previous cycles logged yet. Add your first period above and it will appear here.";
+    return;
+  }
+  historyEl.className = "history";
+  var orderedNewestFirst = sortedPeriods();
+  for (var i = 0; i < orderedNewestFirst.length; i += 1) {
+    var period = orderedNewestFirst[i];
+    var node = template.content.firstElementChild.cloneNode(true);
+    var symptoms = period.symptoms && period.symptoms.length ? "Symptoms: " + period.symptoms.join(", ") : "No symptoms added";
+    var noteText = period.notes ? " • Notes: " + period.notes : "";
+    var length = periodLength(period);
+    var gap = cycleGapFor(period);
+    node.querySelector(".period-range").textContent = formatDate(period.start) + " – " + formatDate(period.end);
+    node.querySelector(".cycle-chip").textContent = i === 0 ? "Latest" : "Previous";
+    node.querySelector(".cycle-meta").innerHTML = "<span>" + length + " day" + (length === 1 ? "" : "s") + " period</span>" +
+      "<span>" + (gap ? gap + " day cycle" : "First saved cycle") + "</span>" +
+      "<span>" + period.flow + " flow</span>";
+    node.querySelector(".period-details").textContent = symptoms + noteText;
+    attachHistoryButtons(node, period.id);
+    historyEl.appendChild(node);
+  }
+}
+
+function attachHistoryButtons(node, id) {
+  node.querySelector(".edit").addEventListener("click", function () { editPeriod(id); });
+  node.querySelector(".delete").addEventListener("click", function () { deletePeriod(id); });
+}
+
+function renderCalendar() {
+  calendarEl.innerHTML = "";
+  monthLabel.textContent = visibleMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  var year = visibleMonth.getFullYear();
+  var month = visibleMonth.getMonth();
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var today = toISO(new Date());
+  var predicted = predictedPeriodRange();
+
+  for (var i = 0; i < firstDay; i += 1) {
+    var empty = document.createElement("div");
+    empty.className = "day empty";
+    calendarEl.appendChild(empty);
+  }
+
+  for (var day = 1; day <= daysInMonth; day += 1) {
+    var date = new Date(year, month, day, 12);
+    var iso = toISO(date);
+    var cell = document.createElement("div");
+    cell.className = "day";
+    cell.innerHTML = "<span class='day-number'>" + day + "</span>";
+    if (iso === today) cell.classList.add("today");
+    for (var p = 0; p < periods.length; p += 1) {
+      if (dateInRange(iso, periods[p].start, periods[p].end)) cell.classList.add("period");
+    }
+    if (predicted && dateInRange(iso, predicted.start, predicted.end)) cell.classList.add("predicted");
+    calendarEl.appendChild(cell);
+  }
+}
+
+function renderAll() {
+  renderSummary();
+  renderHistory();
+  renderCalendar();
+}
+
+function validateDates(start, end) {
+  if (!start || !end) return "Please choose both start and end dates.";
+  if (end < start) return "End date cannot be before start date.";
+  if (daysBetween(start, end) > 14) return "That period is longer than 14 days. Please check the dates.";
+  return null;
+}
+
+function saveEntry(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  var error = validateDates(startDate.value, endDate.value);
+  if (error) {
+    alert(error);
+    return false;
+  }
+
+  var entry = {
+    id: editId.value || makeId(),
+    start: startDate.value,
+    end: endDate.value,
+    flow: flow.value,
+    symptoms: getSelectedSymptoms(),
+    notes: "",
+    updatedAt: new Date().toISOString()
+  };
+
+  if (editId.value) {
+    for (var i = 0; i < periods.length; i += 1) {
+      if (periods[i].id === editId.value) periods[i] = entry;
+    }
+  } else {
+    periods.push(entry);
+  }
+
+  var savedPermanently = savePeriods();
+  var entryMonth = toDate(entry.start);
+  visibleMonth = new Date(entryMonth.getFullYear(), entryMonth.getMonth(), 1);
+  resetForm();
+  renderAll();
+  showSaveStatus(
+    savedPermanently ? "Saved. Your dates are highlighted in the calendar." : storageWarning,
+    savedPermanently ? "success" : "warning"
+  );
+  return false;
+}
+
+function editPeriod(id) {
+  var period = null;
+  for (var i = 0; i < periods.length; i += 1) {
+    if (periods[i].id === id) period = periods[i];
+  }
+  if (!period) return;
+  editId.value = period.id;
+  startDate.value = period.start;
+  endDate.value = period.end;
+  flow.value = period.flow;
+  setSelectedSymptoms(period.symptoms || []);
+  cancelEdit.classList.remove("hidden");
+  form.querySelector(".primary").textContent = "Update period";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deletePeriod(id) {
+  if (!confirm("Delete this period entry?")) return;
+  var kept = [];
+  for (var i = 0; i < periods.length; i += 1) {
+    if (periods[i].id !== id) kept.push(periods[i]);
+  }
+  periods = kept;
+  savePeriods();
+  renderAll();
+}
+
+var saveButton = document.getElementById("savePeriod");
+if (saveButton) saveButton.addEventListener("click", saveEntry);
+cancelEdit.addEventListener("click", resetForm);
+
+document.getElementById("prevMonth").addEventListener("click", function () {
+  visibleMonth.setMonth(visibleMonth.getMonth() - 1);
+  renderCalendar();
+});
+
+document.getElementById("nextMonth").addEventListener("click", function () {
+  visibleMonth.setMonth(visibleMonth.getMonth() + 1);
+  renderCalendar();
+});
+
+document.getElementById("exportData").addEventListener("click", function () {
+  var blob = new Blob([JSON.stringify({ app: "Luna Cycle Tracker", version: 1, periods: periods }, null, 2)], { type: "application/json" });
+  var link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "luna-cycle-backup.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+
+document.getElementById("importData").addEventListener("change", function (event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var parsed = JSON.parse(reader.result);
+      var incoming = parsed && parsed.periods && parsed.periods.length ? parsed.periods : [];
+      var added = 0;
+      for (var i = 0; i < incoming.length; i += 1) {
+        if (incoming[i].start && incoming[i].end && !validateDates(incoming[i].start, incoming[i].end)) {
+          incoming[i].id = incoming[i].id || makeId();
+          periods.push(incoming[i]);
+          added += 1;
+        }
+      }
+      if (!added) {
+        alert("No valid period entries were found in that backup file.");
+        return;
+      }
+      savePeriods();
+      renderAll();
+      showSaveStatus("Imported " + added + " entries.", "success");
+    } catch (error) {
+      alert("Sorry, that file could not be imported.");
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("clearData").addEventListener("click", function () {
+  if (!periods.length) return;
+  if (!confirm("Delete all saved cycle data from this browser?")) return;
+  periods = [];
+  savePeriods();
+  resetForm();
+  renderAll();
+});
+
+document.getElementById("appleHelp").addEventListener("click", function () {
+  document.getElementById("appleHelpText").classList.toggle("hidden");
+});
+
+renderAll();
+
+  </script>
+</body>
+</html>
