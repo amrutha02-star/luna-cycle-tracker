@@ -565,11 +565,16 @@ button, .import-button, .link-button, .mini-cta {
     </section>
 
     <section class="card apple-card" id="importSection">
-      <p class="section-kicker">Coming next</p>
+      <p class="section-kicker">Import history</p>
       <h2>Apple Health history</h2>
-      <p>For this first version, you can use manual logging and backup import/export. Apple Health import will be the next bigger step because Apple exports a large file that needs special reading.</p>
-      <button id="appleHelp" class="ghost">How Apple Health import will work</button>
-      <p id="appleHelpText" class="help-text hidden">You would export your Health data from your iPhone, then choose that file in this app. The app would read only cycle-related entries in your browser and let you review them before saving.</p>
+      <p>If you already downloaded your Apple Health data, choose the <strong>export.xml</strong> file here. Luna reads only menstrual flow dates and saves them as previous cycles.</p>
+      <label class="import-button ghost small-action">
+        Choose Apple Health export.xml
+        <input id="appleImport" type="file" accept=".xml,text/xml,application/xml" />
+      </label>
+      <button id="appleHelp" class="ghost small-action">Need help finding export.xml?</button>
+      <p id="appleHelpText" class="help-text hidden">If your Apple download is a zip file, tap/open it first to unzip it. Then open the Apple Health export folder and choose <strong>export.xml</strong>. The file can be large; it is read privately on your device and is not uploaded to me.</p>
+      <p id="appleImportStatus" class="help-text hidden" aria-live="polite"></p>
     </section>
   </main>
 
@@ -890,6 +895,104 @@ function validateDates(start, end) {
   return null;
 }
 
+function readXmlAttribute(tag, name) {
+  var pattern = new RegExp(name + "=\\\"([^\\\"]*)\\\"");
+  var match = tag.match(pattern);
+  return match ? match[1] : "";
+}
+
+function appleDateToISO(value) {
+  var match = String(value || "").match(/(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : "";
+}
+
+function flowStrength(flowName) {
+  if (/Heavy/i.test(flowName)) return 3;
+  if (/Medium/i.test(flowName)) return 2;
+  if (/Light/i.test(flowName)) return 1;
+  return 0;
+}
+
+function bestFlowName(records) {
+  var best = 0;
+  for (var i = 0; i < records.length; i += 1) {
+    best = Math.max(best, flowStrength(records[i].flow));
+  }
+  if (best === 3) return "Heavy";
+  if (best === 1) return "Light";
+  return "Medium";
+}
+
+function parseAppleHealthPeriods(xmlText) {
+  var dates = {};
+  var recordPattern = /<Record\b[^>]*HKCategoryTypeIdentifierMenstrualFlow[^>]*>/g;
+  var match;
+  while ((match = recordPattern.exec(xmlText)) !== null) {
+    var tag = match[0];
+    var start = appleDateToISO(readXmlAttribute(tag, "startDate"));
+    if (!start) continue;
+    var value = readXmlAttribute(tag, "value");
+    dates[start] = { date: start, flow: value || "HKCategoryValueMenstrualFlowMedium" };
+  }
+
+  var ordered = Object.keys(dates).sort();
+  var imported = [];
+  var group = [];
+
+  function flushGroup() {
+    if (!group.length) return;
+    var start = group[0].date;
+    var end = group[group.length - 1].date;
+    if (!validateDates(start, end)) {
+      imported.push({
+        id: makeId(),
+        start: start,
+        end: end,
+        flow: bestFlowName(group),
+        symptoms: [],
+        notes: "Imported from Apple Health",
+        updatedAt: new Date().toISOString()
+      });
+    }
+    group = [];
+  }
+
+  for (var i = 0; i < ordered.length; i += 1) {
+    var record = dates[ordered[i]];
+    if (!group.length) {
+      group.push(record);
+      continue;
+    }
+    var previous = group[group.length - 1].date;
+    var gap = daysBetween(previous, record.date);
+    if (gap >= 1 && gap <= 2) {
+      group.push(record);
+    } else {
+      flushGroup();
+      group.push(record);
+    }
+  }
+  flushGroup();
+  return imported;
+}
+
+window.parseAppleHealthPeriods = parseAppleHealthPeriods;
+
+function mergeImportedPeriods(incoming) {
+  var added = 0;
+  for (var i = 0; i < incoming.length; i += 1) {
+    var exists = false;
+    for (var j = 0; j < periods.length; j += 1) {
+      if (periods[j].start === incoming[i].start && periods[j].end === incoming[i].end) exists = true;
+    }
+    if (!exists) {
+      periods.push(incoming[i]);
+      added += 1;
+    }
+  }
+  return added;
+}
+
 function saveEntry(event) {
   if (event && event.preventDefault) event.preventDefault();
   var error = validateDates(startDate.value, endDate.value);
@@ -1004,6 +1107,48 @@ document.getElementById("importData").addEventListener("change", function (event
     } catch (error) {
       alert("Sorry, that file could not be imported.");
     }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("appleImport").addEventListener("change", function (event) {
+  var file = event.target.files[0];
+  var status = document.getElementById("appleImportStatus");
+  if (!file) return;
+  status.className = "help-text";
+  status.textContent = "Reading Apple Health file. This can take a moment for a large file...";
+
+  if (/\.zip$/i.test(file.name)) {
+    status.textContent = "This looks like a zip file. Please unzip it first, then choose export.xml inside the Apple Health export folder.";
+    event.target.value = "";
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var imported = parseAppleHealthPeriods(String(reader.result || ""));
+      if (!imported.length) {
+        status.textContent = "I could not find menstrual flow records in that file. Please make sure you chose export.xml from Apple Health.";
+        return;
+      }
+      var added = mergeImportedPeriods(imported);
+      if (!added) {
+        status.textContent = "I found Apple Health period data, but it looks like those cycles are already saved.";
+        return;
+      }
+      savePeriods();
+      renderAll();
+      status.textContent = "Imported " + added + " previous cycle" + (added === 1 ? "" : "s") + " from Apple Health.";
+      showSaveStatus(status.textContent, "success");
+    } catch (error) {
+      status.textContent = "Sorry, I could not read that Apple Health file. Please choose export.xml, not the whole zip file.";
+    }
+    event.target.value = "";
+  };
+  reader.onerror = function () {
+    status.textContent = "Sorry, your browser could not open that file.";
     event.target.value = "";
   };
   reader.readAsText(file);
